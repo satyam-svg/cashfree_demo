@@ -121,6 +121,14 @@ function PaymentApp() {
       const checkoutOptions = {
         paymentSessionId: sessionId,
         redirectTarget: "_modal",
+        // ✅ Enable all payment methods in the UI
+        paymentMethods: {
+          card: true,
+          netbanking: true,
+          upi: true,
+          wallet: true,
+          paylater: true,
+        },
       };
 
       await cashfree.checkout(checkoutOptions);
