@@ -51,8 +51,6 @@ function PaymentApp() {
       setLoading(true);
       setPaymentStatus(null);
 
-      // Generate unique customer ID
-
       const response = await axios.post(`${API_BASE_URL}/create-payment`, {
         customer_name: userData.name,
         customer_email: userData.email,
@@ -118,18 +116,35 @@ function PaymentApp() {
     if (!sessionId) return;
 
     try {
+      // ✅ FIXED: Proper checkout options for all payment methods
       const checkoutOptions = {
         paymentSessionId: sessionId,
         redirectTarget: "_modal",
-        // ✅ Enable all payment methods in the UI
-        paymentMethods: {
-          card: true,
-          netbanking: true,
-          upi: true,
-          wallet: true,
-          paylater: true,
-        },
+        // ✅ Remove paymentMethods object - let Cashfree show all available methods
       };
+
+      // ✅ Alternative: If you want to explicitly enable all methods, use this:
+      // const checkoutOptions = {
+      //   paymentSessionId: sessionId,
+      //   redirectTarget: "_modal",
+      //   paymentMethods: {
+      //     upi: {
+      //       enabled: true
+      //     },
+      //     card: {
+      //       enabled: true
+      //     },
+      //     netbanking: {
+      //       enabled: true
+      //     },
+      //     wallet: {
+      //       enabled: true
+      //     },
+      //     paylater: {
+      //       enabled: true
+      //     }
+      //   }
+      // };
 
       await cashfree.checkout(checkoutOptions);
     } catch (error) {
