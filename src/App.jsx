@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://cashfree-backend-007e.onrender.com";
 const CASHFREE_MODE = "production"; // Use "sandbox" for testing
 
 function PaymentApp() {
@@ -63,6 +63,8 @@ function PaymentApp() {
         customer_email: userData.email,
         customer_phone: userData.phone,
       });
+
+      console.log(response.data);
 
       if (response.data.success) {
         setOrderInfo(response.data.data);
