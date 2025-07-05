@@ -43,7 +43,7 @@ function PaymentApp() {
   const userData = {
     name: "Ludo Player",
     email: "player@ludoking.com",
-    phone: "9876543210",
+    phone: "8302252848",
   };
 
   const createPaymentOrder = async () => {
