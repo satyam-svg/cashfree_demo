@@ -43,7 +43,7 @@ function PaymentApp() {
   const userData = {
     name: "Ludo Player",
     email: "player@ludoking.com",
-    phone: "8302252848",
+    phone: "9876543210",
   };
 
   const createPaymentOrder = async () => {
@@ -116,36 +116,13 @@ function PaymentApp() {
     if (!sessionId) return;
 
     try {
-      // ✅ FIXED: Proper checkout options for all payment methods
+      // ✅ TRY METHOD 1: Completely minimal options
       const checkoutOptions = {
         paymentSessionId: sessionId,
         redirectTarget: "_modal",
-        // ✅ Remove paymentMethods object - let Cashfree show all available methods
       };
 
-      // ✅ Alternative: If you want to explicitly enable all methods, use this:
-      // const checkoutOptions = {
-      //   paymentSessionId: sessionId,
-      //   redirectTarget: "_modal",
-      //   paymentMethods: {
-      //     upi: {
-      //       enabled: true
-      //     },
-      //     card: {
-      //       enabled: true
-      //     },
-      //     netbanking: {
-      //       enabled: true
-      //     },
-      //     wallet: {
-      //       enabled: true
-      //     },
-      //     paylater: {
-      //       enabled: true
-      //     }
-      //   }
-      // };
-
+      console.log("Checkout options:", checkoutOptions);
       await cashfree.checkout(checkoutOptions);
     } catch (error) {
       console.error("Checkout error:", error);
