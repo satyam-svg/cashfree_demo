@@ -3,7 +3,7 @@ import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 
 const API_BASE_URL = "http://localhost:8000";
-const CASHFREE_MODE = "production";
+const CASHFREE_MODE = "production"; // Use "sandbox" for testing
 
 function PaymentApp() {
   const [cashfree, setCashfree] = useState(null);
@@ -19,16 +19,23 @@ function PaymentApp() {
           mode: CASHFREE_MODE,
         });
         setCashfree(instance);
+        console.log("Cashfree SDK loaded successfully");
 
         // Add event listeners for payment status
         instance.on("paymentSuccess", async (data) => {
           console.log("Payment Success:", data);
+          setPaymentStatus("verifying");
           await verifyPayment();
         });
 
         instance.on("paymentFailure", (data) => {
           console.log("Payment Failed:", data);
           setPaymentStatus("failure");
+        });
+
+        instance.on("paymentCancel", (data) => {
+          console.log("Payment Cancelled:", data);
+          setPaymentStatus("cancelled");
         });
       } catch (error) {
         console.error("Payment initialization failed:", error);
@@ -102,7 +109,6 @@ function PaymentApp() {
   const startLudoGame = () => {
     console.log("Starting Ludo game...");
     // Add your Ludo game initialization logic here
-    // For example: window.location.href = "/ludo-game";
     alert("🎉 Payment Successful! Starting Ludo Game...");
   };
 
@@ -116,13 +122,67 @@ function PaymentApp() {
     if (!sessionId) return;
 
     try {
-      // ✅ TRY METHOD 1: Completely minimal options
+      // ✅ UPDATED: Enhanced checkout options to show all payment methods
       const checkoutOptions = {
         paymentSessionId: sessionId,
         redirectTarget: "_modal",
+
+        // ✅ CRITICAL: These options ensure all payment methods are displayed
+        appearance: {
+          theme: "light",
+          variables: {
+            colorPrimary: "#6a11cb",
+            colorPrimaryText: "#ffffff",
+            colorBackground: "#ffffff",
+            colorText: "#333333",
+            borderRadius: "8px",
+            fontFamily: "Arial, sans-serif",
+          },
+        },
+
+        // ✅ Enable specific payment methods explicitly
+        paymentMethods: {
+          // All major payment methods
+          card: {
+            enabled: true,
+          },
+          upi: {
+            enabled: true,
+          },
+          netBanking: {
+            enabled: true,
+          },
+          wallet: {
+            enabled: true,
+          },
+          payLater: {
+            enabled: true,
+          },
+          cardlessEmi: {
+            enabled: true,
+          },
+          bankTransfer: {
+            enabled: true,
+          },
+        },
+
+        // ✅ Enhanced user experience options
+        retry: {
+          enabled: true,
+          maxCount: 3,
+        },
+
+        // Customer details for better UX
+        customerDetails: {
+          customerPhone: userData.phone,
+          customerEmail: userData.email,
+          customerName: userData.name,
+        },
       };
 
-      console.log("Checkout options:", checkoutOptions);
+      console.log("Initiating checkout with options:", checkoutOptions);
+
+      // ✅ Use the enhanced checkout method
       await cashfree.checkout(checkoutOptions);
     } catch (error) {
       console.error("Checkout error:", error);
@@ -138,6 +198,8 @@ function PaymentApp() {
             🎉 Payment Successful! Starting Ludo...
           </div>
         );
+      case "verifying":
+        return <div className="info-message">🔍 Verifying payment...</div>;
       case "pending":
         return (
           <div className="warning-message">
@@ -153,6 +215,12 @@ function PaymentApp() {
             ❌ Payment failed. Please try again.
           </div>
         );
+      case "cancelled":
+        return (
+          <div className="warning-message">
+            ⚠️ Payment was cancelled. Try again when ready.
+          </div>
+        );
       case "order_failed":
         return (
           <div className="error-message">❌ Failed to create payment order</div>
@@ -160,6 +228,16 @@ function PaymentApp() {
       case "checkout_failed":
         return (
           <div className="error-message">❌ Payment window failed to open</div>
+        );
+      case "sdk_not_loaded":
+        return (
+          <div className="error-message">
+            ❌ Payment system not ready. Please refresh.
+          </div>
+        );
+      case "payment_init_failed":
+        return (
+          <div className="error-message">❌ Payment initialization failed</div>
         );
       default:
         return null;
@@ -170,7 +248,13 @@ function PaymentApp() {
     <div className="payment-container">
       <header className="header">
         <h1>🎲 Ludo King</h1>
-        <p>Click below to unlock premium Ludo experience</p>
+        <p>Choose your preferred payment method below</p>
+        <div className="payment-methods-preview">
+          <span className="method-icon">💳</span>
+          <span className="method-icon">📱</span>
+          <span className="method-icon">🏦</span>
+          <span className="method-icon">💰</span>
+        </div>
       </header>
 
       <div className="payment-actions">
@@ -180,11 +264,19 @@ function PaymentApp() {
           className={`pay-button ${loading ? "loading" : ""}`}
         >
           {loading ? (
-            <span className="loading-spinner"></span>
+            <>
+              <span className="loading-spinner"></span>
+              Processing...
+            </>
           ) : (
             <span>💰 Pay ₹1 & Play Ludo</span>
           )}
         </button>
+
+        <div className="payment-info">
+          <p>Secure payments powered by Cashfree</p>
+          <p>✅ Cards • UPI • Net Banking • Wallets • EMI</p>
+        </div>
 
         <div className="status-container">{renderPaymentStatus()}</div>
       </div>
@@ -195,7 +287,7 @@ function PaymentApp() {
             Terms
           </a>
           <a href="/privacy.pdf" download className="doc-link">
-            Contact
+            Privacy
           </a>
           <a href="/refund.pdf" download className="doc-link">
             Refund
@@ -233,6 +325,44 @@ function PaymentApp() {
         .header p {
           font-size: 1.2rem;
           opacity: 0.9;
+          margin-bottom: 15px;
+        }
+
+        .payment-methods-preview {
+          display: flex;
+          justify-content: center;
+          gap: 15px;
+          margin-top: 15px;
+        }
+
+        .method-icon {
+          font-size: 2rem;
+          padding: 10px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .method-icon:nth-child(2) {
+          animation-delay: 0.5s;
+        }
+
+        .method-icon:nth-child(3) {
+          animation-delay: 1s;
+        }
+
+        .method-icon:nth-child(4) {
+          animation-delay: 1.5s;
+        }
+
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
         }
 
         .pay-button {
@@ -251,6 +381,7 @@ function PaymentApp() {
           justify-content: center;
           align-items: center;
           gap: 10px;
+          margin-bottom: 20px;
         }
 
         .pay-button:hover {
@@ -282,6 +413,18 @@ function PaymentApp() {
           }
         }
 
+        .payment-info {
+          margin-bottom: 20px;
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          font-size: 0.9rem;
+        }
+
+        .payment-info p {
+          margin: 5px 0;
+        }
+
         .status-container {
           margin-top: 25px;
           min-height: 60px;
@@ -289,7 +432,8 @@ function PaymentApp() {
 
         .success-message,
         .error-message,
-        .warning-message {
+        .warning-message,
+        .info-message {
           padding: 15px;
           border-radius: 10px;
           text-align: center;
@@ -315,6 +459,11 @@ function PaymentApp() {
           flex-direction: column;
           align-items: center;
           gap: 12px;
+        }
+
+        .info-message {
+          background: rgba(255, 255, 255, 0.9);
+          color: #3498db;
         }
 
         .retry-button {
